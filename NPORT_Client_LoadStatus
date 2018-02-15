@@ -1,0 +1,23 @@
+EXEC sp_set_session_context @key=N'SystemUserName', @value='SYSTEM'
+
+SELECT
+
+cl.ClientName
+,cl.ClientCode
+,cl.Active
+,cl.SFTPPrefix
+
+,ls.OriginalFileName
+,ls.ObjectName
+,ls.ObjectType
+,ls.ProcessStage
+,ls.CreatedTimeStamp as LoadStatus_CreatedTimeStamp
+,ls.CreatedUser as LoadStatus_CreatedUser
+,ls.JobStartDateTime
+,ls.JobGuid
+,cast((max(ls.JobStartDateTime) OVER(PARTITION BY ls.JobGuid) - min(ls.JobStartDateTime) OVER(PARTITION BY ls.JobGuid)) as TIME (0)) as JobGuid_Duration
+,ls.FileState
+,ls.StatusCode
+
+FROM Automation.Clients as cl
+JOIN Automation.LoadStatus as ls ON cl.ID=ls.ClientID
