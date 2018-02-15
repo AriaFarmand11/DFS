@@ -14,6 +14,8 @@ cl.ClientName
 ,ls.CreatedTimeStamp as LoadStatus_CreatedTimeStamp
 ,ls.CreatedUser as LoadStatus_CreatedUser
 ,ls.JobStartDateTime
+,cast(ls.JobStartDateTime as date) as JobStartDate
+,cast(ls.JobStartDateTime as time(0)) as JobStartTime
 ,ls.JobGuid
 ,cast((max(ls.JobStartDateTime) OVER(PARTITION BY ls.JobGuid) - min(ls.JobStartDateTime) OVER(PARTITION BY ls.JobGuid)) as TIME (0)) as JobGuid_Duration
 ,ls.FileState
