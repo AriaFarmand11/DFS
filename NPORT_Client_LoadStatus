@@ -8,6 +8,7 @@ cl.ClientName
 ,cl.SFTPPrefix
 
 ,ls.OriginalFileName
+,case when ls.OriginalFileName IS NOT NULL then 1 else 0 end as OriginalFileName_Count
 ,ls.ObjectName
 ,ls.ObjectType
 ,ls.ProcessStage
@@ -15,11 +16,16 @@ cl.ClientName
 ,ls.CreatedUser as LoadStatus_CreatedUser
 ,ls.JobStartDateTime
 ,cast(ls.JobStartDateTime as date) as JobStartDate
+,case when cast(ls.JobStartDateTime as date) = cast(GetDate() as date) then 1 else 0 end as Today_Filter
+,case when cast(ls.JobStartDateTime as date) = cast(GetDate() -1  as date )  then 1 else 0 end as Yesterday_Filter
+
+
 ,cast(ls.JobStartDateTime as time(0)) as JobStartTime
 ,ls.JobGuid
 ,cast((max(ls.JobStartDateTime) OVER(PARTITION BY ls.JobGuid) - min(ls.JobStartDateTime) OVER(PARTITION BY ls.JobGuid)) as TIME (0)) as JobGuid_Duration
 ,ls.FileState
 ,ls.StatusCode
+,case when ls.StatusCode = 'c' then 1 else 0 end as Completed_FileCount
+,case when ls.StatusCode = 'e' then 1 else 0 end as Error_FileCount
 
 FROM Automation.Clients as cl
-JOIN Automation.LoadStatus as ls ON cl.ID=ls.ClientID
