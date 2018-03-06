@@ -1,0 +1,24 @@
+---EXEC sp_set_session_context @key=N'SystemUserName', @value='SYSTEM'
+
+SELECT
+
+cl.Name as ClientName
+,cl.ClientCode as ClientCode
+,cx.Name as ComplexName
+,fg.Name as FundGroupName
+,fnd.Name as FundName
+,fnd.FundGroupCode
+,fnd.FundCode
+,fc.Name as ClassName
+,fc.FundClassCode
+,CAST(fnd.CreatedDateTime as date) as date_created
+
+FROM dbo.Client as cl
+JOIN dbo.Complex as cx on cl.ClientCode = cx.ClientCode
+JOIN dbo.FundGroup as fg on cx.ComplexID = fg.ComplexID
+JOIN dbo.Fund as fnd on fg.FundGroupID = fnd.FundGroupID
+JOIN dbo.FundClass as fc on cx.ComplexID = fc.ComplexID
+
+WHERE fnd.IsActive = 1
+
+ORDER BY cl.Name ASC
