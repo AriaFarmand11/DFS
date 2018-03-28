@@ -6,7 +6,12 @@ cl.ClientName
 ,cl.ClientCode
 ,cl.Active
 ,cl.SFTPPrefix
-,ls.CreatedUser
+
+,case 
+	when ls.CreatedUser = 'azurefunctionautomation' then 'SFTP' 
+	when ls.CreatedUser = 'arcsystem_appusr_UAT' then 'Arc App'
+else ls.CreatedUser end as FileLoadUser
+
 ,ls.OriginalFileName
 ,case when ls.OriginalFileName IS NOT NULL then 1 else NULL end as OriginalFileName_Count
 ,ls.ObjectName
