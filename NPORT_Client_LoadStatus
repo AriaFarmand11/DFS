@@ -6,6 +6,7 @@ cl.ClientName
 ,cl.ClientCode
 ,cl.Active
 ,cl.SFTPPrefix
+,ls.CreatedUser
 ,ls.OriginalFileName
 ,case when ls.OriginalFileName IS NOT NULL then 1 else NULL end as OriginalFileName_Count
 ,ls.ObjectName
