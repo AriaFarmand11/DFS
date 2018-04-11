@@ -1,7 +1,7 @@
----EXEC sp_set_session_context @key=N'SystemUserName', @value='SYSTEM'
+EXEC sp_set_session_context @key=N'SystemUserName', @value='SYSTEM'
 
 SELECT
-
+DISTINCT
 cl.Name as ClientName
 ,cl.ClientCode as ClientCode
 ,cx.Name as ComplexName
