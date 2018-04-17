@@ -1,0 +1,43 @@
+EXEC sp_set_session_context @key=N'SystemUserName', @value='SYSTEM'
+
+SELECT
+
+reg.FullLegalName 
+,fund.Name as FundName
+,form.Name as FormName
+,ap.Label as AccountPeriod
+,fund.CreatedDateTime as FundCreated
+,filfund.CreatedDateTime as FilingFundCreated
+,filsub.SubmittedDateTime as FilingSubmitDateTime
+,filsub.FilingStatusID as FilingStatusID
+,filstat.Name as FilingStatus
+
+
+
+from dbo.FilingSubmission filsub
+
+join dbo.FilingStatus filstat
+on filsub.FilingStatusID = filstat.FilingStatusID
+
+join dbo.FilingFund filfund
+on filsub.FilingID = filfund.FilingID
+
+join dbo.Filing fil
+on filfund.FilingID = fil.FilingID
+
+join dbo.AccountPeriod ap
+on fil.AccountPeriodID = ap.AccountPeriodID
+
+join dbo.Form form
+on ap.FormID = form.FormID
+
+join dbo.Fund fund
+on filfund.FundID = fund.FundID
+
+left join dbo.FilingRegistrant filreg
+on filfund.FilingID = filreg.FilingID
+
+left join dbo.Registrant reg
+on filreg.RegistrantID = reg.RegistrantID
+
+order by filsub.SubmittedDateTime DESC
