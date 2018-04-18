@@ -2,42 +2,59 @@ EXEC sp_set_session_context @key=N'SystemUserName', @value='SYSTEM'
 
 SELECT
 
-reg.FullLegalName 
+--Registrant
+reg.FullLegalName
+
+--Fund Name 
 ,fund.Name as FundName
+
+--Form
 ,form.Name as FormName
+
+--AccountPeriodEnd
 ,ap.Label as AccountPeriod
-,fund.CreatedDateTime as FundCreated
+
+--Fund Created Date
+,fund.CreatedDateTime as FundCreatedDateTime
+,CAST(fund.CreatedDateTime as DATE) as FundCreatedDate
+,CAST(fund.CreatedDateTime as TIME(0)) as FundCreatedTime
 ,filfund.CreatedDateTime as FilingFundCreated
+
+--Form Submission Date
 ,filsub.SubmittedDateTime as FilingSubmitDateTime
+,CAST(filsub.SubmittedDateTime as DATE) as FilingSubmitDate
+,CAST(filsub.SubmittedDateTime as TIME(0)) as FilingSubmitTime
+
+--Filing Status
 ,filsub.FilingStatusID as FilingStatusID
 ,filstat.Name as FilingStatus
+,filsub.AccessionNumber as FilingAccessionNumber
+,filsub.FilingSubmissionID as FilingSubmissionID
 
+FROM dbo.FilingSubmission filsub
 
+JOIN dbo.FilingStatus filstat
+ON filsub.FilingStatusID = filstat.FilingStatusID
 
-from dbo.FilingSubmission filsub
+JOIN dbo.FilingFund filfund
+ON filsub.FilingID = filfund.FilingID
 
-join dbo.FilingStatus filstat
-on filsub.FilingStatusID = filstat.FilingStatusID
+JOIN dbo.Filing fil
+ON filfund.FilingID = fil.FilingID
 
-join dbo.FilingFund filfund
-on filsub.FilingID = filfund.FilingID
+JOIN dbo.AccountPeriod ap
+ON fil.AccountPeriodID = ap.AccountPeriodID
 
-join dbo.Filing fil
-on filfund.FilingID = fil.FilingID
+JOIN dbo.Form form
+ON ap.FormID = form.FormID
 
-join dbo.AccountPeriod ap
-on fil.AccountPeriodID = ap.AccountPeriodID
+JOIN dbo.Fund fund
+ON filfund.FundID = fund.FundID
 
-join dbo.Form form
-on ap.FormID = form.FormID
+LEFT JOIN dbo.FilingRegistrant filreg
+ON filfund.FilingID = filreg.FilingID
 
-join dbo.Fund fund
-on filfund.FundID = fund.FundID
+LEFT JOIN dbo.Registrant reg
+ON filreg.RegistrantID = reg.RegistrantID
 
-left join dbo.FilingRegistrant filreg
-on filfund.FilingID = filreg.FilingID
-
-left join dbo.Registrant reg
-on filreg.RegistrantID = reg.RegistrantID
-
-order by filsub.SubmittedDateTime DESC
+ORDER BY filsub.SubmittedDateTime DESC
