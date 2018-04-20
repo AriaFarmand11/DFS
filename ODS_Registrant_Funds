@@ -3,7 +3,7 @@ SELECT
 ,c.client_legal_name as ClientLegalName
 ,cv.company_name as RegistrantName
 ,cv.cik_number as RegistrantCIK
-,cv.address_line_1 as RegistrantName
+,cv.address_line_1 as RegistrantAddressLine
 ,cv.city as RegistrantCity
 ,cv.state as RegistrantState
 ,cv.postal_code as RegistrantZipCode
