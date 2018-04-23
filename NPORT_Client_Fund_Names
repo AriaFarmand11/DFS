@@ -19,6 +19,7 @@ cl.Name as ClientName
 --FUND
 ,fnd.Name as FundName
 ,fnd.FundCode
+,fnd.FundID
 
 --CLASS
 --,fc.Name as ClassName
