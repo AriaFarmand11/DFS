@@ -7,6 +7,7 @@ SELECT
 ,cv.city as RegistrantCity
 ,cv.state as RegistrantState
 ,cv.postal_code as RegistrantZipCode
+,cv.city+', '+cv.state as Registrant_CityState
 ,fv.fund_code as FundCode
 ,fv.fund_series_id as FundSeriesID
 ,fv.fund_legal_name as FundLegalName
