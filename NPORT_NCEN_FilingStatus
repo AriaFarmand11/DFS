@@ -1,60 +1,61 @@
 EXEC sp_set_session_context @key=N'SystemUserName', @value='SYSTEM'
 
 SELECT
+DISTINCT
 
---Registrant
-reg.FullLegalName
+--CLIENT
+cl.Name as ClientName
+,cl.ClientCode as ClientCode
+,cl.ClientID
 
---Fund Name 
-,fund.Name as FundName
+--COMPLEX
+,cx.Name as ComplexName
+,cx.ComplexCode as ComplexCode
 
---Form
-,form.Name as FormName
+--FUND GROUP
+,fg.Name as FundGroupName
+,fg.FundGroupCode as FundGroupCode
 
---AccountPeriodEnd
-,ap.Label as AccountPeriod
+--FUND
+,fnd.Name as FundName
+,fnd.FundCode
 
---Fund Created Date
-,fund.CreatedDateTime as FundCreatedDateTime
-,CAST(fund.CreatedDateTime as DATE) as FundCreatedDate
-,CAST(fund.CreatedDateTime as TIME(0)) as FundCreatedTime
-,filfund.CreatedDateTime as FilingFundCreated
+--CLASS
+--,fc.Name as ClassName
+--,fc.FundClassCode
 
---Form Submission Date
-,filsub.SubmittedDateTime as FilingSubmitDateTime
+--FUND CREATED DATE
+,CAST(fnd.CreatedDateTime as date) as FundCreatedDate
+,CAST(fnd.CreatedDateTime as time(0)) as FundCreatedTime
+
+--Filing Info
+,ff.filingfundid as FilingFundID
+,f.filingid as FilingID
+,a.label as AccountPeriod
+,fo.name as Form
+,filsub.SubmittedDateTime as Filing_Submission_DateTime
 ,CAST(filsub.SubmittedDateTime as DATE) as FilingSubmitDate
-,CAST(filsub.SubmittedDateTime as TIME(0)) as FilingSubmitTime
+,CAST(filsub.SubmittedDateTime as TIME (0)) as FilingSubmitTime
+--,filsubdet.Message as FilingSubmitMessage
+,case when filsubdet.Message like '%ACCEPTED%' then 1 else 0 end as SEC_Accepted
+,filsubdet.FilingSubmissionDetailID as FilingSubmitDetailID
 
---Filing Status
-,filsub.FilingStatusID as FilingStatusID
-,filstat.Name as FilingStatus
-,filsub.AccessionNumber as FilingAccessionNumber
-,filsub.FilingSubmissionID as FilingSubmissionID
 
-FROM dbo.FilingSubmission filsub
+FROM dbo.Client as cl
+JOIN dbo.Complex as cx on cl.ClientID = cx.ClientID
+JOIN dbo.FundGroup as fg on cx.ComplexID = fg.ComplexID
+JOIN dbo.Fund as fnd on fg.FundGroupID = fnd.FundGroupID
 
-JOIN dbo.FilingStatus filstat
-ON filsub.FilingStatusID = filstat.FilingStatusID
 
-JOIN dbo.FilingFund filfund
-ON filsub.FilingID = filfund.FilingID
+--INNER JOIN dbo.FundClass as fc on cx.ComplexID = fc.ComplexID
 
-JOIN dbo.Filing fil
-ON filfund.FilingID = fil.FilingID
+JOIN dbo.FilingFund ff on fnd.FundID = ff.FundID
+JOIN dbo.Filing f on ff.filingid = f.filingid
+JOIN dbo.AccountPeriod a on f.accountperiodid = a.accountperiodid
+JOIN dbo.Form fo on a.formid = fo.formid
+JOIN dbo.FilingSubmission filsub on ff.FilingID = filsub.FilingID
+JOIN dbo.FilingSubmissionDetail filsubdet on filsub.FilingSubmissionID = filsubdet.FilingSubmissionID
+JOIN dbo.FilingSubmissionDetailType filsubdettype on filsubdet.FilingSubmissionDetailTypeId = filsubdettype.FilingSubmissionDetailTypeID
 
-JOIN dbo.AccountPeriod ap
-ON fil.AccountPeriodID = ap.AccountPeriodID
 
-JOIN dbo.Form form
-ON ap.FormID = form.FormID
-
-JOIN dbo.Fund fund
-ON filfund.FundID = fund.FundID
-
-LEFT JOIN dbo.FilingRegistrant filreg
-ON filfund.FilingID = filreg.FilingID
-
-LEFT JOIN dbo.Registrant reg
-ON filreg.RegistrantID = reg.RegistrantID
-
-ORDER BY filsub.SubmittedDateTime DESC
+WHERE fnd.IsActive = 1
