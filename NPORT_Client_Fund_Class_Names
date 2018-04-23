@@ -6,6 +6,7 @@ DISTINCT
 --CLIENT
 cl.Name as ClientName
 ,cl.ClientCode as ClientCode
+,cl.ClientID as ClientID
 
 --COMPLEX
 ,cx.Name as ComplexName
@@ -20,8 +21,8 @@ cl.Name as ClientName
 ,fnd.FundCode
 
 --CLASS
-,fc.Name as ClassName
-,fc.FundClassCode
+--,fc.Name as ClassName
+--,fc.FundClassCode
 
 --FUND CREATED DATE
 ,CAST(fnd.CreatedDateTime as date) as date_created
@@ -29,9 +30,9 @@ cl.Name as ClientName
 
 
 FROM dbo.Client as cl
-JOIN dbo.Complex as cx on cl.ClientCode = cx.ClientCode
+JOIN dbo.Complex as cx on cl.ClientID = cx.ClientID
 JOIN dbo.FundGroup as fg on cx.ComplexID = fg.ComplexID
 JOIN dbo.Fund as fnd on fg.FundGroupID = fnd.FundGroupID
-JOIN dbo.FundClass as fc on cx.ComplexID = fc.ComplexID
+--JOIN dbo.FundClass as fc on cx.ComplexID = fc.ComplexID
 
 WHERE fnd.IsActive = 1
