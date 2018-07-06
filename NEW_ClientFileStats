@@ -1,0 +1,17 @@
+SELECT DISTINCT
+JobGuid
+,OriginalFileName
+,StatusCode
+,ClientCode
+,CAST(ProcessStartDateTime as date) as ProcessStartDate
+,CAST(ProcessStartDateTime as smalldatetime) as ProcessStartDateTime
+,CASE WHEN OriginalFileName LIKE '%ice%' THEN 'ICE' WHEN OriginalFileName LIKE '%ESP%' THEN 'SSC' ELSE 'Standard' END as FileType
+,SUBSTRING(ObjectName, CHARINDEX('/', ObjectName)+1
+,LEN(ObjectName)) as ObjectName
+,CASE StatusCode WHEN 'c' THEN 'Complete' WHEN 'r' THEN 'Running' WHEN 'e' THEN 'Error' END as StatusCode_FullName
+,CASE StatusCode WHEN 'c' THEN 'Complete*' WHEN 'r' THEN 'Running' WHEN 'e' THEN 'Error' END as StatusCode_Slicer
+
+FROM error.loadstatus
+WHERE createdtimestamp >= DATEADD(WEEK, -2, GETDATE()) AND OriginalFileName IS NOT NULL and StatusCode not in ('t','x','m')
+
+ORDER BY ProcessStartDateTime DESC
