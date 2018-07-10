@@ -1,0 +1,192 @@
+REPORT: Client Data and Feeds - PROD & UAT
+
+*Note* 
+- Below are all the SQL queries used in the ArcFiling Client Data and Feeds - PROD & UAT reports. 
+- The queries work in both environments (PROD and UAT)
+
+---------------------------------------------------------------
+Funds:
+
+EXEC sp_set_session_context @key=N'SystemUserName', @value='SYSTEM';
+
+SELECT DISTINCT 
+f.FundID
+,f.ClientCode
+,f.FundCode
+,f.ClientCode + f.FundCode as ClientFund
+,f.ClientCode + f.LegalEntityCode as ClientLegalEntity
+,f.Name
+,f.LegalEntityCode
+,f.EDGARSeriesIdentifier
+,f.IsActive
+
+FROM dbo.Fund f 
+JOIN dbo.Client c ON f.ClientCode = c.ClientCode
+-----------
+
+Registrants:
+
+SELECT DISTINCT 
+r.ClientCode
+,r.LegalEntityCode
+,r.ClientCode + r.LegalEntityCode as ClientLegalEntity
+,r.FullLegalName
+,r.IsActive
+
+FROM dbo.Registrant r 
+
+JOIN dbo.Client c ON r.ClientCode = c.ClientCode
+-----------
+
+Classes:
+
+SELECT DISTINCT 
+cl.ClientCode
+,cl.FundCode
+,cl.ClientCode + cl.FundCode as ClientFund
+,cl.ClassCode
+,cl.ClassName
+,cl.EDGARClassIdentifier 
+
+
+FROM dbo.Class cl 
+JOIN client c ON cl.clientcode = c.clientcode
+-----------
+
+Clients:
+
+SELECT DISTINCT 
+ClientCode
+,Name
+
+FROM dbo.Client
+-----------
+
+FilingPeriods:
+
+SELECT DISTINCT
+fu.FundID
+,a.Label
+,FORMAT(DATEADD(day,-1,a.EndDate),'MM/dd/yyyy') as AccountPeriodEnd
+
+FROM filingfund ff
+JOIN fund fu ON ff.fundid = fu.fundid
+JOIN filing f ON ff.filingid = f.filingid
+JOIN accountperiod a ON f.accountperiodid = a.accountperiodid
+-----------
+
+SSC_DataFeeds:
+
+SELECT DISTINCT 
+JobGuid
+,OriginalFileName
+,REPLACE(right(OriginalFileName,12),'.txt','') as SSCPeriod
+,StatusCode
+,ClientCode
+,CAST(ProcessStartDateTime as date) as ProcessStartDate
+,CAST(ProcessStartDateTime as smalldatetime) as ProcessStartDateTime
+
+
+,CASE 
+WHEN OriginalFileName LIKE '%FORWARDS%' THEN 'Forwards'
+WHEN OriginalFileName LIKE '%GL%' THEN 'GL'
+WHEN OriginalFileName LIKE '%POSITIONS%' THEN 'Positions'
+WHEN OriginalFileName LIKE '%Performance%' THEN 'Performance'
+WHEN OriginalFileName LIKE '%SECLENDING%' THEN 'SEC Lending'
+
+ELSE 'Other SSC FileType' END as SSCFileType
+
+
+,CASE
+WHEN OriginalFileName LIKE '%2LZZ%' THEN '2LZZ'
+WHEN OriginalFileName LIKE '%42ZZ%' THEN '42ZZ'
+WHEN OriginalFileName LIKE '%6HAA%' THEN '6HAA'
+WHEN OriginalFileName LIKE '%6IBB%' THEN '6IBB'
+WHEN OriginalFileName LIKE '%6RAA%' THEN '6RAA'
+WHEN OriginalFileName LIKE '%9RZZ%' THEN '9RZZ'
+WHEN OriginalFileName LIKE '%B8YY%' THEN 'B8YY'
+WHEN OriginalFileName LIKE '%CCVV%' THEN 'CCVV'
+WHEN OriginalFileName LIKE '%CVXX%' THEN 'CVXX'
+WHEN OriginalFileName LIKE '%F7AA%' THEN 'F7AA'
+WHEN OriginalFileName LIKE '%IBSS%' THEN 'IBSS'
+WHEN OriginalFileName LIKE '%MVAA%' THEN 'MVAA'
+WHEN OriginalFileName LIKE '%N4YY%' THEN 'N4YY'
+WHEN OriginalFileName LIKE '%S7BB%' THEN 'S7BB'
+WHEN OriginalFileName LIKE '%WBEE%' THEN 'WBEE'
+WHEN OriginalFileName LIKE '%WCZZ%' THEN 'WCZZ'
+WHEN OriginalFileName LIKE '%MVAA%' THEN 'MVAA'
+
+ELSE 'Other SSC Client' END as SSCClient
+
+,SUBSTRING(ObjectName, CHARINDEX('/', ObjectName)+1, LEN(ObjectName)) as ObjectName
+
+,CASE StatusCode WHEN 'c' THEN 'Complete' WHEN 'r' THEN 'Running' WHEN 'e' THEN 'Error' END as StatusCode_FullName
+,CASE StatusCode WHEN 'c' THEN 'Complete*' WHEN 'r' THEN 'Running' WHEN 'e' THEN 'Error' END as StatusCode_Slicer 
+
+
+FROM error.loadstatus
+WHERE OriginalFileName IS NOT NULL AND StatusCode NOT IN ('t','x','m') AND OriginalFileName LIKE '%esp%'
+-----------
+
+ClientDataFeeds:
+
+SELECT DISTINCT 
+
+JobGuid 
+,OriginalFileName
+,StatusCode
+,ClientCode
+
+,CAST(ProcessStartDateTime as date) as ProcessStartDate
+,CAST(ProcessStartDateTime as smalldatetime) as ProcessStartDateTime
+,DATEADD(MONTH, DATEDIFF(MONTH, 0, ProcessStartDateTime), 0) as MonthLoaded
+
+
+
+,CASE 
+WHEN ObjectName LIKE '%_nport_%' and ObjectName LIKE '%.xlsx' THEN 'NPORT Excel'
+WHEN ObjectName LIKE '%_fundinfo_%' THEN 'Fund Info'
+WHEN ObjectName LIKE '%_referenceinstrument_%' THEN 'Reference Instrument'
+WHEN ObjectName LIKE '%_ncen_%' THEN 'NCEN'
+WHEN ObjectName LIKE '%_fundholdings_%' THEN 'Fund Holdings'
+WHEN ObjectName LIKE '%_funds_%' THEN 'Funds'
+WHEN ObjectName LIKE '%_classes_%' THEN 'Classes'
+WHEN ObjectName LIKE '%_generalledgertransactions_%' THEN 'General Ledger Transactions'
+WHEN ObjectName LIKE '%_generalledger_%' THEN 'General Ledger'
+WHEN ObjectName LIKE '%_fundclass_%' THEN 'Fund Class'
+WHEN ObjectName LIKE '%_fundrisk_%' THEN 'Fund Risk'
+WHEN ObjectName LIKE '%_legalentity_%' THEN 'Legal Entity'
+WHEN ObjectName LIKE '%_fundseclending_%' THEN 'Fund Sec Lending'
+WHEN ObjectName LIKE '%_fundgainslosses_%' THEN 'Fund Gains Losses'
+WHEN ObjectName LIKE '%_fundrepocollateral_%' THEN 'Fund Repo Collateral'
+WHEN ObjectName LIKE '%_categorycaptions_%' THEN 'Category Captions'
+WHEN ObjectName LIKE '%_currencies_%' THEN 'Currencies'
+
+ELSE 'Other' END as DFSFileType
+
+,SUBSTRING(ObjectName, CHARINDEX('/', ObjectName)+1, len(ObjectName)) as ObjectName
+
+,CASE StatusCode WHEN 'c' THEN 'Complete' WHEN 'r' THEN 'Running' WHEN 'e' THEN 'Error' END as StatusCode_FullName
+,CASE StatusCode WHEN 'c' THEN 'Complete*' WHEN 'r' THEN 'Running' WHEN 'e' THEN 'Error' END as StatusCode_Slicer 
+
+FROM error.loadstatus
+WHERE StatusCode NOT IN ('t','x','m') AND OriginalFileName IS NOT NULL
+-----------
+
+Sleeves:
+
+EXEC sp_set_session_context @key=N'SystemUserName', @value='SYSTEM';
+SELECT
+cl.Code as ClientCode
+,cl.Name as ClientName
+,Fund.Name as FundName
+,sl.FundCode as FundCode
+,sl.SleeveCode as SleeveCode
+,sl.SleeveName as SleeveName
+
+
+FROM Clients.Client cl
+INNER JOIN Funds.Sleeve sl ON cl.Id = sl.ClientId
+INNER JOIN Fund ON sl.FundCode = Fund.FundCode
+-----------
+
