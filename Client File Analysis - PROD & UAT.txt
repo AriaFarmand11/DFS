@@ -1,0 +1,42 @@
+REPORT: Client File Analysis - PROD & UAT
+
+*Note* 
+- Below are all the SQL queries used in the ArcFiling Client File Analysis - PROD & UAT reports. 
+- The queries work in both environments (PROD and UAT)
+
+---------------------------------------------------------------
+
+LoadStatus Master:
+
+SELECT DISTINCT
+JobGuid
+,OriginalFileName
+,StatusCode
+,ClientCode
+,CAST(ProcessStartDateTime as date) as ProcessStartDate
+,CAST(ProcessStartDateTime as smalldatetime) as ProcessStartDateTime
+,CASE WHEN OriginalFileName LIKE '%ice%' THEN 'ICE' WHEN OriginalFileName LIKE '%ESP%' THEN 'SSC' ELSE 'Standard' END as FileType
+,SUBSTRING(ObjectName, CHARINDEX('/', ObjectName)+1
+,LEN(ObjectName)) as ObjectName
+,CASE StatusCode WHEN 'c' THEN 'Complete' WHEN 'r' THEN 'Running' WHEN 'e' THEN 'Error' END as StatusCode_FullName
+,CASE StatusCode WHEN 'c' THEN 'Complete*' WHEN 'r' THEN 'Running' WHEN 'e' THEN 'Error' END as StatusCode_Slicer
+
+FROM error.loadstatus
+WHERE createdtimestamp >= DATEADD(WEEK, -2, GETDATE()) AND OriginalFileName IS NOT NULL and StatusCode not in ('t','x','m')
+-----------
+
+Error Table:
+
+SELECT DISTINCT
+	JobGuid,
+	TableName,
+    replace(replace(replace(replace(ColumnName,'__',''),'Copy of ',''),'_converted',''), '_', '') as ColumnName,
+	ErrorCode,
+	CASE WHEN ErrorCode in ('50000', '-1') THEN 'See Error Description for details' ELSE ColumnValue END as ColumnValue,
+	CASE WHEN ErrorCode in ('50000', '-1') THEN REPLACE(ColumnValue, 'Calling stored procedure sp_GetFilingIDs_NCEN failed: ', '') ELSE Description END AS ErrorDescription,
+	Source
+	
+FROM error.dataingestion d
+JOIN error.dataingestionerrorcodes c ON d.errorcode = c.code
+WHERE ErrorDateTime >= DATEADD(WEEK, -2, GETDATE())
+-----------
