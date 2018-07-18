@@ -1,0 +1,46 @@
+*REPLACE
+,REPLACE(right(OriginalFileName,12),'.txt','') as SSCPeriod
+
+
+*MULTIPLE CASE
+,CASE 
+WHEN OriginalFileName LIKE '%FORWARDS%' THEN 'Forwards'
+WHEN OriginalFileName LIKE '%GL%' THEN 'GL'
+WHEN OriginalFileName LIKE '%POSITIONS%' THEN 'Positions'
+WHEN OriginalFileName LIKE '%Performance%' THEN 'Performance'
+WHEN OriginalFileName LIKE '%SECLENDING%' THEN 'SEC Lending'
+
+ELSE 'Other SSC FileType' END as SSCFileType
+
+*SUBSTRING
+,SUBSTRING(ObjectName, CHARINDEX('/', ObjectName)+1, LEN(ObjectName)) as ObjectName
+
+
+*CAST DATE/TIME
+,CAST(ProcessStartDateTime as date) as ProcessStartDate
+,CAST(ProcessStartDateTime as smalldatetime) as ProcessStartDateTime
+,DATEADD(MONTH, DATEDIFF(MONTH, 0, ProcessStartDateTime), 0) as MonthLoaded
+,CAST(fnd.CreatedDateTime as date) as date_created
+,CAST(fnd.CreatedDateTime as time(0)) as time_created
+
+,case when cast(ls.JobStartDateTime as date) = cast(GetDate() as date) then 1 else 0 end as JobStart_Today
+,case when cast(ls.JobStartDateTime as date) = cast(GetDate() -1  as date )  then 1 else 0 end as JobStart_Yesterday
+
+,case when cast(ls.JobStartDateTime as date) = cast(GetDate() as date ) AND ls.OriginalFileName IS NOT NULL then 1 else NULL end as Today_Original_FileCount
+,case when cast(ls.JobStartDateTime as date) = cast(GetDate() as date ) AND ls.StatusCode = 'c' AND ls.OriginalFileName IS NOT NULL then 1 else NULL end as Today_Completed_FileCount
+
+,case when cast(ls.JobStartDateTime as date) = cast(GetDate() -1  as date ) AND ls.OriginalFileName IS NOT NULL then 1 else NULL end as Yesterday_Original_FileCount
+,case when cast(ls.JobStartDateTime as date) = cast(GetDate() -1  as date ) AND ls.StatusCode = 'c' AND ls.OriginalFileName IS NOT NULL then 1 else NULL end as Yesterday_Completed_FileCount
+
+EXEC sp_set_session_context @key=N'SystemUserName', @value='SYSTEM'
+
+
+*REPLACE
+replace(replace(replace(replace(ColumnName,'__',''),'Copy of ',''),'_converted',''), '_', '') as ColumnName,
+
+*LAST 2 WEEKS
+WHERE ErrorDateTime >= DATEADD(WEEK, -2, GETDATE())
+
+*CALCULATION / PARTITION
+,cast((max(ls.JobStartDateTime) OVER(PARTITION BY ls.JobGuid) - min(ls.JobStartDateTime) OVER(PARTITION BY ls.JobGuid)) as TIME (0)) as JobGuid_Duration
+
