@@ -5,53 +5,6 @@ REPORT: Client Data and Feeds - PROD & UAT
 - The queries work in both environments (PROD and UAT)
 
 ---------------------------------------------------------------
-Funds:
-
-EXEC sp_set_session_context @key=N'SystemUserName', @value='SYSTEM';
-
-SELECT DISTINCT 
-f.FundID
-,f.ClientCode
-,f.FundCode
-,f.ClientCode + f.FundCode as ClientFund
-,f.ClientCode + f.LegalEntityCode as ClientLegalEntity
-,f.Name
-,f.LegalEntityCode
-,f.EDGARSeriesIdentifier
-,f.IsActive
-
-FROM dbo.Fund f 
-JOIN dbo.Client c ON f.ClientCode = c.ClientCode
------------
-
-Registrants:
-
-SELECT DISTINCT 
-r.ClientCode
-,r.LegalEntityCode
-,r.ClientCode + r.LegalEntityCode as ClientLegalEntity
-,r.FullLegalName
-,r.IsActive
-
-FROM dbo.Registrant r 
-
-JOIN dbo.Client c ON r.ClientCode = c.ClientCode
------------
-
-Classes:
-
-SELECT DISTINCT 
-cl.ClientCode
-,cl.FundCode
-,cl.ClientCode + cl.FundCode as ClientFund
-,cl.ClassCode
-,cl.ClassName
-,cl.EDGARClassIdentifier 
-
-
-FROM dbo.Class cl 
-JOIN client c ON cl.clientcode = c.clientcode
------------
 
 Clients:
 
@@ -60,19 +13,7 @@ ClientCode
 ,Name
 
 FROM dbo.Client
------------
 
-FilingPeriods:
-
-SELECT DISTINCT
-fu.FundID
-,a.Label
-,FORMAT(DATEADD(day,-1,a.EndDate),'MM/dd/yyyy') as AccountPeriodEnd
-
-FROM filingfund ff
-JOIN fund fu ON ff.fundid = fu.fundid
-JOIN filing f ON ff.filingid = f.filingid
-JOIN accountperiod a ON f.accountperiodid = a.accountperiodid
 -----------
 
 SSC_DataFeeds:
@@ -173,20 +114,78 @@ FROM error.loadstatus
 WHERE StatusCode NOT IN ('t','x','m') AND OriginalFileName IS NOT NULL
 -----------
 
-Sleeves:
+StaticData_w/Classes
 
-EXEC sp_set_session_context @key=N'SystemUserName', @value='SYSTEM';
-SELECT
-cl.Code as ClientCode
-,cl.Name as ClientName
-,Fund.Name as FundName
-,sl.FundCode as FundCode
-,sl.SleeveCode as SleeveCode
-,sl.SleeveName as SleeveName
+EXEC sp_set_session_context @key=N'SystemUserName', @value='SYSTEM'
+
+SELECT DISTINCT
+
+cl.ClientCode AS ClientCode
+,cl.Name AS ClientName
+,co.ComplexCode
+,co.Name AS ComplexName
+,reg.FullLegalName
+,reg.LegalEntityCode
+,fg.FundGroupCode AS FundGroupCode
+,fg.Name AS FundGroupName
+,fu.FundCode AS FundCode
+,fu.Name AS FundName
+,fu.EdgarSeriesIdentifier
+,cls.ClassName
+,cls.EDGARClassIdentifier
+,cls.ClassCode
 
 
-FROM Clients.Client cl
-INNER JOIN Funds.Sleeve sl ON cl.Id = sl.ClientId
-INNER JOIN Fund ON sl.FundCode = Fund.FundCode
+FROM Client cl
+
+INNER JOIN Complex co ON cl.ClientID = co.ClientID
+INNER JOIN FundGroup fg ON co.ComplexID = fg.ComplexID
+INNER JOIN Fund fu ON fg.FundGroupID = fu.FundGroupID
+INNER JOIN Registrant reg ON fu.RegistrantID = reg.RegistrantID
+LEFT JOIN Class cls ON fu.FundCode = cls.FundCode
+
+
+WHERE 
+cl.IsActive = 1
+AND co.IsActive = 1
+AND fg.IsActive = 1
+AND fu.IsActive = 1
+AND reg.IsActive = 1
+
 -----------
+
+StaticData_w/Sleeves
+
+EXEC sp_set_session_context @key=N'SystemUserName', @value='SYSTEM'
+
+SELECT DISTINCT
+
+cl.ClientCode AS ClientCode
+,cl.Name AS ClientName
+,co.ComplexCode
+,co.Name AS ComplexName
+,reg.FullLegalName
+,reg.LegalEntityCode
+,fg.FundGroupCode AS FundGroupCode
+,fg.Name AS FundGroupName
+,fu.FundCode AS FundCode
+,fu.Name AS FundName
+,fu.EdgarSeriesIdentifier
+,fsl.SleeveCode
+,fsl.SleeveName
+
+FROM Client cl
+
+INNER JOIN Complex co ON cl.ClientID = co.ClientID
+INNER JOIN FundGroup fg ON co.ComplexID = fg.ComplexID
+INNER JOIN Fund fu ON fg.FundGroupID = fu.FundGroupID
+INNER JOIN Registrant reg ON fu.RegistrantID = reg.RegistrantID
+LEFT JOIN Funds.Sleeve fsl ON fu.FundCode = fsl.FundCode
+
+WHERE 
+cl.IsActive = 1
+AND co.IsActive = 1
+AND fg.IsActive = 1
+AND fu.IsActive = 1
+AND reg.IsActive = 1
 
