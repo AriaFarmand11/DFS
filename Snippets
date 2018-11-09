@@ -44,3 +44,9 @@ WHERE ErrorDateTime >= DATEADD(WEEK, -2, GETDATE())
 *CALCULATION / PARTITION
 ,cast((max(ls.JobStartDateTime) OVER(PARTITION BY ls.JobGuid) - min(ls.JobStartDateTime) OVER(PARTITION BY ls.JobGuid)) as TIME (0)) as JobGuid_Duration
 
+*Previous AccountPeriods
+LEFT JOIN accountperiod ap ON fi.accountperiodid = ap.accountperiodid 
+    LEFT JOIN (SELECT Max(CASE WHEN Getdate() BETWEEN begindate AND enddate THEN accountperiodid - 2 ELSE 0 END) AS AccountPeriodID 
+               FROM   dbo.accountperiod 
+               WHERE  formid = '1') Date 
+              ON Date.accountperiodid = ap.accountperiodid 
